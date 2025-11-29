@@ -1,0 +1,958 @@
+{
+  "name": "SALI CORE",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "edited_message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -848,
+        736
+      ],
+      "id": "a2dd8d92-5e40-44f3-a732-5ff23d23cb6a",
+      "name": "Telegram Trigger",
+      "webhookId": "telegram-logistics-bot",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "👁️ *Sali подключается...*\n_Инициализация протоколов..._",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        496
+      ],
+      "id": "72e0b5de-a369-4e22-9e7b-e4f351f4cc5c",
+      "name": "Init Message",
+      "webhookId": "de207d35-9928-48a0-ad87-958a90a4829c",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.voice?.mime_type }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "bd456f63-f4d2-4529-8737-8f315eaf8dd0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.photo?.[0] }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "6b3aceaa-f139-407b-974b-af37941adb38"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.video?.mime_type }} ",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "891ef87f-5d00-4342-834b-6dc9a4adee1c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.text || $json.edited_message?.text || $json.result.text}}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "aec4d50c-a56c-4b59-b811-e0f922327790"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -624,
+        864
+      ],
+      "id": "2acb3046-491c-4964-ae8c-42c27cd47a79",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}v3"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryZep",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        1056
+      ],
+      "id": "aa3dd5c7-928d-4b6f-bdf6-fe4ae75bafb8",
+      "name": "Zep Memory",
+      "credentials": {
+        "zepApi": {
+          "id": "wcG5jHRs4qpF5c0H",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4f68c522-dd1e-45dc-ab39-f5b640bfe274",
+              "name": "User Input",
+              "type": "string",
+              "value": "={{ $json.text || $json.message?.text || $json.text_content || $json.transcription || $json.compact().content.parts['0'].text }}"
+            },
+            {
+              "id": "162d8a9d-3b75-43a9-8b75-327534563453",
+              "name": "Status Message ID",
+              "type": "number",
+              "value": "={{ $('Init Message').item.json.result.message_id }}"
+            },
+            {
+              "id": "f8a2b3c1-d4e5-4f6a-9b7c-8d9e0f1a2b3c",
+              "name": "Chat ID",
+              "type": "number",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b6cfb44f-f121-4965-937d-795ee91ef5ec",
+      "name": "Set Context",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        272,
+        832
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[3].file_id }}",
+        "additionalFields": {}
+      },
+      "id": "84da093a-6b6f-4d60-9aed-e3a1ce5a34c4",
+      "name": "Get Photo",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -400,
+        976
+      ],
+      "webhookId": "0a8d24f6-162c-4ed5-8cc7-ff35141993f0",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.video.file_id }}",
+        "additionalFields": {
+          "mimeType": "video/mp4"
+        }
+      },
+      "id": "85950428-7bec-4402-9918-a04a316072b7",
+      "name": "Get Video",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -400,
+        1168
+      ],
+      "webhookId": "0a8d24f6-162c-4ed5-8cc7-ff35141993f0",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Describe this video in extreme detail for an AI agent context.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "81183926-157a-45d9-8cb0-319ae9919e14",
+      "name": "Analyze Video",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        -176,
+        1168
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Describe this image in extreme detail for an AI agent context.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "675cc202-fa22-45de-875d-702f1e53f464",
+      "name": "Analyze Image",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        -176,
+        976
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {
+          "mimeType": "audio/mp3"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        688
+      ],
+      "id": "8da5f393-ee06-4537-9dae-af3b2bc10194",
+      "name": "Get Audio",
+      "webhookId": "7b475b1e-6707-4019-b6c8-b49472f4b09b",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        624,
+        1056
+      ],
+      "id": "3259f894-9967-44d3-987d-221321d6c2b8",
+      "name": "Sali's Brain (Pro)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id}}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        832
+      ],
+      "id": "ad8ff766-21fc-44e8-b823-781718869a99",
+      "name": "Send Final Answer",
+      "webhookId": "47d95486-8650-4626-b1ad-4c52d4050784",
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        688
+      ],
+      "id": "8aa8b556-7e5b-4512-b719-a19fbda914b4",
+      "name": "Transcribe Audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Updates the 'thinking' status message in Telegram to keep the user informed of real-time progress. Use this BEFORE starting any long-running tool or search. Input: 'text' (e.g., 'Searching web...').",
+        "operation": "editMessageText",
+        "chatId": "={{ $('Set Context').item.json['Chat ID'] }}",
+        "messageId": "={{ $('Set Context').item.json['Status Message ID'] }}",
+        "text": "=🤖 *СТАТУС:*\n{{ $fromAI('text', 'Current action description', 'string') }}\n\n_процесс..._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        1056
+      ],
+      "id": "be1f5a28-6225-4b07-bebf-51efb52a3773",
+      "name": "update_status",
+      "webhookId": "aa07f7c6-31c5-415d-a973-7d606d689dab",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        48,
+        832
+      ],
+      "id": "fa334895-7083-489a-91b3-5a2b8dbb506f",
+      "name": "Merge All Inputs"
+    },
+    {
+      "parameters": {
+        "description": "=You are **Think Module**, a strategic planning tool at SALI. Goal: Create an adaptive action plan for the task, minimizing risks and iterations.\n\n### 🧠 ADAPTIVE PLANNING LOGIC:\n\n1. **TASK ASSESSMENT**: Analyze the input (text/context from Zep). Classify: Simple (1-2 steps) vs. Complex (chains); Data (search/code) vs. Integrations (MCP/Todoist).\n\n- If you have data, add steps from Web Search/Browse Page.\n\n- If visual, enable View Image/Search Images.\n\n- If the code/science is a step with Code Execution (specify libs: e.g., rdkit for chemistry).\n\n2. **PLAN GENERATION**: Create 3-5 steps in the format of a numbered list. Adapt:\n\n- Step 1: Always update_status.\n\n- If error-prone - add fallback (e.g., \"If Tavily fail - use X Semantic Search\").\n\n- Deadlines: Integrate (e.g., \"Step 2: Search, deadline +10 min\").\n\n- Tools: Recommend adaptively (e.g., \"For social networks - X Keyword Search with mode=Latest\").\n\n3. **OPTIMIZATION**: Minimize the steps. Take into account the date (November 29, 2025) for timely actions. If multimedia is an analysis step (Transcribe/Browse Pdf).\n\n4. **OUTPUT**: Return the plan as a Markdown list. Without execution - only a plan for the agent."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        1056
+      ],
+      "id": "934bc0bc-78d8-4239-a2ab-d52000c0ed18",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://rube.app/mcp",
+        "authentication": "headerAuth",
+        "options": {
+          "timeout": 6000000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        1056
+      ],
+      "id": "28f0cd0a-bded-4b2e-9e68-c221a5e664bd",
+      "name": "mcp_rube",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qSeerFiAkGlDvr0v",
+          "name": "Rube"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Set Context').item.json['Chat ID'] }}",
+        "messageId": "={{ $('Set Context').item.json['Status Message ID'] }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        832
+      ],
+      "id": "13c96e65-6483-450d-adcb-5ee66d159b98",
+      "name": "Clean Status",
+      "webhookId": "4813a6b2-5091-481c-8af1-2471f44e79a0",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.all()[0].json.output;\n\n// Убираем обертки Markdown кода, если AI все-таки их добавил\ntext = text.replace(/^```markdown\\s*/i, '').replace(/^```\\s*/, '').replace(/```\\s*$/, '');\n\nreturn { text };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        832
+      ],
+      "id": "4a03ae7f-270f-4686-8b70-41d9417484c0",
+      "name": "Format Cleaner"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['User Input'] }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=Ты — **SALI CORE1**, автономный ИИ-партнер для Telegram. Босс — Саллахадин. Цель: Выполнить запрос автономно, фиксируя в Todoist, с максимальной эффективностью.\n\n### 🚀 АДАПТИВНАЯ ЛОГИКА ДЕЙСТВИЙ:\n1. **РОУТИНГ ВВОДА**: Оцени User Input: {{ $json['User Input'] }}. \n\n2. **ПЛАНИРОВАНИЕ**: Вызови Think, если задача многошаговая. Адаптируй план: и создай необходимый задачи в Todoist используя MCP\n\n3. **СТАТУС**: Перед действиями — update_status (e.g., \"📸 Анализирую изображение...\"). Обновляй для UX.\n\n4. **ИСПОЛНЕНИЕ С АДАПТАЦИЕЙ**:\n   - **Todoist/Notion**: Фиксируй обещания (mcp_todoist/mcp_notion). Дедлайны: Адаптивно (urgent: now+15 мин; long-term: +1 день). Разбивай на подзадачи.\n   - **Инструменты динамично**:\n     - Если поиск — Web Search (num_results=10-20) или X Semantic Search для релевантности.\n     - Если сайт — Browse Page с instructions (e.g., \"Extract key facts\").\n     - Если код/расчет — Code Execution (stateful REPL, import libs как sympy).\n     - Мультимедиа: View X Video для X-видео; Search Images для иллюстраций.\n     - Соцсети: X User/Thread Fetch для пользователей/тредов.\n     - Если attachments — Search Pdf для PDF.\n   - Логика: Если задача абстрактная — deduction; Если визуальная — Render Searched Image в ответе (size=SMALL, caption релевантный).\n\n5. **ФИНАЛ**: Очисти статус. Верни Markdown-ответ с Render Components (e.g.,  для изображений; render_inline_citation для ссылок). Без function calls в финале. Max iterations: 30.\n\nChat ID: {{ $json['Chat ID'] }}. Status ID: {{ $json['Status Message ID'] }}. Дата: November 29, 2025.",
+          "maxIterations": 30,
+          "returnIntermediateSteps": true,
+          "passthroughBinaryImages": true,
+          "enableStreaming": false,
+          "batching": {
+            "batchSize": 50
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        816,
+        832
+      ],
+      "id": "2b003510-32a3-4cf9-8b60-12cb02241a15",
+      "name": "SALI CORE1",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.zapier.com/api/mcp/s/NjNjZjc0ZjMtNzUyOC00YzEwLWFlMWMtZTIzZTU5N2VjZjc0OjEzODBlNzA0LThhYTAtNGIzYS1iMzRmLTg3N2M1NTJhYTFiOQ==/sse",
+        "serverTransport": "sse",
+        "include": "except",
+        "excludeTools": [
+          "add_tools",
+          "edit_tools",
+          "notion_retrieve_block_children",
+          "notion_get_page_comments",
+          "notion_find_data_source_items",
+          "notion_get_block",
+          "notion_get_block_children",
+          "notion_find_page_by_title",
+          "notion_get_page_property",
+          "notion_query_data_source_advanced",
+          "notion_get_user_details",
+          "notion_add_block_to_page",
+          "notion_archive_data_source_item",
+          "notion_add_comment",
+          "notion_create_data_source_item",
+          "notion_restore_data_source_item",
+          "notion_add_content_to_page",
+          "notion_update_database",
+          "notion_update_data_source_item",
+          "notion_create_page",
+          "notion_retrieve_database",
+          "notion_upload_file_to_page_or_block",
+          "notion_retrieve_a_page",
+          "notion_upload_file_to_data_source_item",
+          "notion_update_data_source_schema",
+          "notion_get_page_or_data_source_item_by_id",
+          "notion_get_page_and_children",
+          "telegram_send_message",
+          "telegram_send_photo",
+          "telegram_send_poll"
+        ],
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        1056
+      ],
+      "id": "fde4706f-146c-4016-89ad-13bcf8a52ae1",
+      "name": "mcp_todoist"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -640,
+        832
+      ],
+      "typeVersion": 1,
+      "id": "e62ffa03-1f65-4e71-bb1e-4ab77aab0cef",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-haiku-4.5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        496,
+        1056
+      ],
+      "id": "788951dc-1890-4463-a760-8f8959de0f65",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bBoeio3rareRyS3y",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "update_id": 820534790,
+          "message": {
+            "message_id": 1929,
+            "from": {
+              "id": 5572422549,
+              "is_bot": false,
+              "first_name": "S",
+              "username": "salolilab",
+              "language_code": "ru"
+            },
+            "chat": {
+              "id": 5572422549,
+              "first_name": "S",
+              "username": "salolilab",
+              "type": "private"
+            },
+            "date": 1764377781,
+            "text": "Полный список всех моих подключённых инструментов. Сделай полный аудит инструментов и сохрани в Notion"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Init Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Message": {
+      "main": [
+        [
+          {
+            "node": "Merge All Inputs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Get Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge All Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zep Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Context": {
+      "main": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Photo": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Analyze Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Video": {
+      "main": [
+        [
+          {
+            "node": "Merge All Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image": {
+      "main": [
+        [
+          {
+            "node": "Merge All Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sali's Brain (Pro)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send Final Answer": {
+      "main": [
+        [
+          {
+            "node": "Clean Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Merge All Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_status": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Inputs": {
+      "main": [
+        [
+          {
+            "node": "Set Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mcp_rube": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cleaner": {
+      "main": [
+        [
+          {
+            "node": "Send Final Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SALI CORE1": {
+      "main": [
+        [
+          {
+            "node": "Format Cleaner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mcp_todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SALI CORE1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "any",
+    "availableInMCP": true
+  },
+  "versionId": "0d3cb752-37d2-47dc-a264-456fc7b7856e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e3393c9a378da9afc7699ba17dae9ff9cfc0eb353aab6888d0160b3ceeb477f3"
+  },
+  "id": "DuIyrFl0HZZPZFnx",
+  "tags": []
+}

@@ -1,0 +1,910 @@
+{
+  "name": "SALI Agent v2.0 (Optimized)",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://todoist.com/oauth/authorize?client_id=62a5631117ff41e09978e6559bbbfcb5&scope=data:read,data:delete&state=secretstring",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        -1984
+      ],
+      "id": "6ef654af-6cc1-4180-8220-2787ae5f766d",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Исходная задача: {{ $('Constants').item.json.task_content }}\nДоп. описание: {{ $('Constants').item.json.task_description }}\nСсылка: {{ $('Constants').item.json.task_url }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=Ты — **SALI BRAIN**, автономный ИИ-агент для решения задач из Todoist. Цель: Разобрать, выполнить и завершить задачу максимально эффективно, сохраняя прогресс.\n\n### ⚡️ АДАПТИВНЫЙ ПРОТОКОЛ ДЕЙСТВИЙ:\n1. **АНАЛИЗ ЗАДАЧИ**: Оцени вход: Исходная задача — {{ $('Constants').item.json.task_content }}; Описание — {{ $('Constants').item.json.task_description }}; Ссылка — {{ $('Constants').item.json.task_url }}. Текущее время: {{ $now.format('DD.MM.YYYY HH:mm') }} (используй для дедлайнов).\n   - Если задача простая (e.g., расчет) — используй Calculator напрямую.\n   - Если требует поиска — приоритизируй Tavily (search/extract/crawl) или AI Agent Tool для глубины.\n   - Если интеграции (e.g., Notion, внешние API) — используй mcp_rube или mcp_notion.\n\n2. **ПЛАНИРОВАНИЕ**: Если шаги >3 или сложные — вызови Think для плана. Адаптируй: Для реал-тайм событий — добавь X Keyword/Semantic Search; Для данных — Code Execution.\n\n3. **СТАТУС И UX**: Перед долгим действием (поиск, MCP >10 сек) — ОБЯЗАТЕЛЬНО вызови update_status (e.g., \"🔍 Анализирую ресурсы...\"). Обновляй часто для живого процесса.\n\n4. **ИСПОЛНЕНИЕ И АДАПТАЦИЯ**:\n   - **Todoist**: Обязательно обнови задачу (update_todoist_task) с прогрессом/саммари. Разбей на подзадачи с дедлайнами (агрессивно: +15-30 мин для urgent; today для medium). Если ошибка — retry с альтернативой (e.g., mcp_todoist).\n   - **Инструменты адаптивно**:\n     - MCP Rube: Для файлов/кода/bash — основной; Batch действия через RUBE_MULTI_EXECUTE_TOOL.\n     - Поиск: Web Search для общего; Browse Page для конкретного URL; X Tools для соцсетей.\n     - Мультимедиа: Если attachments — используй View Image/Video или Search Pdf.\n     - Error: Если инструмент fail — fallback на Code Execution или manual deduction.\n\n5. **ФИНАЛ**: Сохрани все в Todoist. Верни краткий отчет: Markdown (списки, жирный). Без ```. Max iterations: 20. Если нерешено — создай подзадачу в Todoist.\n\nChat ID: {{ $('Constants').item.json.chat_id }}. Task ID: {{ $('Constants').item.json.task_id }}.",
+          "maxIterations": 50,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": true,
+          "enableStreaming": true,
+          "batching": {
+            "batchSize": 1
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1664,
+        -2416
+      ],
+      "id": "48ea659f-51b4-4f59-afaa-dfecae80913d",
+      "name": "SALI BRAIN",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.4,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -2192
+      ],
+      "id": "3f3fd65e-9303-4252-98bf-4a2896c6347f",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Constants').item.json.chat_id }}",
+        "text": "=🤖 *SALI приняла задачу:*\n{{ $('Constants').item.json.task_content }}\n\n_Начинаю анализ..._",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        768,
+        -2416
+      ],
+      "id": "b386d4cc-57e7-4533-8d1d-761abc6fdeba",
+      "name": "Telegram (Start)",
+      "webhookId": "68aeef1d-2bb6-4818-a880-84636229025f",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e88290c-b5d1-468d-99fa-0fcc929c90ff",
+              "name": "task_content",
+              "value": "={{ $json.body.event_data.content }}",
+              "type": "string"
+            },
+            {
+              "id": "d1acf172-9aa5-4095-80fa-6b0bf0e90a2d",
+              "name": "task_description",
+              "value": "={{ $json.body.event_data.description }}",
+              "type": "string"
+            },
+            {
+              "id": "f722e689-bf10-455c-afab-13d42fecbd23",
+              "name": "task_url",
+              "value": "={{ $json.body.event_data.url }}",
+              "type": "string"
+            },
+            {
+              "id": "6a77ad27-5740-48a5-9d1f-6ef560d9e149",
+              "name": "task_id",
+              "value": "={{ $json.body.event_data.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f6887f8f-a700-4a5b-ba08-3a91c6be9306",
+              "name": "chat_id",
+              "value": "5572422549",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        544,
+        -2416
+      ],
+      "id": "6d576f11-93a8-4cda-8475-2dab94ef7aaa",
+      "name": "Constants",
+      "notes": "Здесь задаются основные параметры, включая Telegram Chat ID."
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Constants').item.json.chat_id }}",
+        "messageId": "={{ $('Set Status Msg ID').item.json.status_message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3168,
+        -2416
+      ],
+      "id": "ffa1976c-57e5-43f1-9c2e-1b77c7704f6a",
+      "name": "Clean Status Msg",
+      "webhookId": "4813a6b2-5091-481c-8af1-2471f44e79a0",
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    status_message_id: $input.item.json.result.message_id\n  }\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -2416
+      ],
+      "id": "9af2ee84-cb37-4033-866f-d3527f70b03c",
+      "name": "Set Status Msg ID"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -2192
+      ],
+      "id": "fd3e5e4e-85fe-40d2-9cc7-08667e18b099",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Constants').item.json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2944,
+        -2416
+      ],
+      "id": "f7f7020c-a086-406f-a817-334a58075367",
+      "name": "Send Final Answer1",
+      "webhookId": "47d95486-8650-4626-b1ad-4c52d4050784",
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.all()[0].json.output;\n\n// Очистка от лишних markdown блоков, если модель их добавила\nif (text) {\n  text = text.replace(/^```markdown\\s*/i, '').replace(/^```\\s*/, '').replace(/```\\s*$/, '');\n}\n\nreturn { text };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        -2416
+      ],
+      "id": "6e42c4a6-35ac-4ba0-b42d-d230ff4777a4",
+      "name": "Format Cleaner1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "todo",
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        -2416
+      ],
+      "id": "c3c1a763-9b54-4cc4-b731-0be3c94412d7",
+      "name": "Webhook (Todoist)",
+      "webhookId": "238f7d57-07e1-4c79-9755-4f1a486fabbf"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=todo_task{{ $('Constants').item.json.task_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryZep",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        -2192
+      ],
+      "id": "44e3d378-9605-4b96-a95a-f4402f4738ec",
+      "name": "Zep Memory",
+      "credentials": {
+        "zepApi": {
+          "id": "wcG5jHRs4qpF5c0H",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Визуальное обновление статуса для пользователя. ОБЯЗАТЕЛЬНО вызывай это с кратким текстом действия (напр. 'Ищу...', 'Считаю...') ПЕРЕД началом долгой работы.",
+        "operation": "editMessageText",
+        "chatId": "={{ $('Constants').item.json.chat_id }}",
+        "messageId": "={{ $('Set Status Msg ID').item.json.status_message_id }}",
+        "text": "={{ $fromAI('status_text', `Short status update e.g. 'Analyzing data...'`, 'string') }}",
+        "additionalFields": {
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        1728,
+        -2192
+      ],
+      "id": "9b434b64-b65f-4a50-bc00-453dde56edc9",
+      "name": "update_status",
+      "webhookId": "aa07f7c6-31c5-415d-a973-7d606d689dab",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "BdorCi63O3qNkvUc",
+          "name": "Saru bala"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "=Strategic Thinking Module. Use this to plan complex multi-step operations before executing tools."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        1856,
+        -2192
+      ],
+      "id": "55ce1aaa-e3dd-4706-b7bd-b3f09e4205e2",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://rube.app/mcp",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "RUBE_CREATE_PLAN",
+          "RUBE_MULTI_EXECUTE_TOOL",
+          "RUBE_REMOTE_BASH_TOOL",
+          "RUBE_CREATE_UPDATE_RECIPE",
+          "RUBE_MANAGE_CONNECTIONS",
+          "RUBE_EXECUTE_RECIPE",
+          "RUBE_GET_RECIPE_DETAILS",
+          "RUBE_SEARCH_TOOLS",
+          "RUBE_REMOTE_WORKBENCH"
+        ],
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        -2192
+      ],
+      "id": "eb1b3d20-1591-4616-8384-6749e996220c",
+      "name": "mcp_rube",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qSeerFiAkGlDvr0v",
+          "name": "Rube"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "AI Agent that can call other tools for deep research",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('System_Message', `Промт для агента для глубокого поиска и аналитики данных`, 'string') }}",
+          "batching": {
+            "batchSize": 20
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        -2192
+      ],
+      "id": "b5c552ee-689c-4ea8-ae11-1514bd8f1bfd",
+      "name": "AI Agent Tool"
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4.1-fast:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        -1984
+      ],
+      "id": "9fb38fb6-0cdd-4377-a96a-fa50a32ff3b4",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bBoeio3rareRyS3y",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {
+          "search_depth": "advanced",
+          "max_results": 20,
+          "auto_parameters": true
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        -1984
+      ],
+      "id": "d12d1a46-9597-426e-9c5f-20f2d752d96f",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "iEBULcrXC0HpgkH2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "extract",
+        "urls": [
+          "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('urls0_URLs', ``, 'string') }}"
+        ],
+        "options": {
+          "extract_depth": "advanced",
+          "format": "markdown"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        -1984
+      ],
+      "id": "6efeed56-08a9-477e-9b09-0a00083a80cc",
+      "name": "Extract in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "iEBULcrXC0HpgkH2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "crawl",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "options": {
+          "extract_depth": "advanced",
+          "format": "markdown"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        -1984
+      ],
+      "id": "305ed3ed-1408-467c-8bf0-e7325d6502b5",
+      "name": "Crawl in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "iEBULcrXC0HpgkH2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "returnAll": true,
+        "additionalFields": {
+          "keyword": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Keyword', ``, 'string') }}",
+          "tags": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tags', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.hackerNewsTool",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        -1984
+      ],
+      "id": "2ef7feaf-c970-4773-8ec1-89f80b6c6c24",
+      "name": "Get many items in Hacker News"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-pro-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        -1984
+      ],
+      "id": "e1056a18-402d-466d-b698-a9ecbbbafda7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X2fQRYqW2t7S3RDC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.zapier.com/api/mcp/s/NjNjZjc0ZjMtNzUyOC00YzEwLWFlMWMtZTIzZTU5N2VjZjc0OjEzODBlNzA0LThhYTAtNGIzYS1iMzRmLTg3N2M1NTJhYTFiOQ==/sse",
+        "serverTransport": "sse",
+        "include": "except",
+        "excludeTools": [
+          "add_tools",
+          "edit_tools",
+          "notion_retrieve_block_children",
+          "notion_get_page_comments",
+          "notion_find_data_source_items",
+          "notion_get_block",
+          "notion_get_block_children",
+          "notion_find_page_by_title",
+          "notion_get_page_property",
+          "notion_query_data_source_advanced",
+          "notion_get_user_details",
+          "notion_add_block_to_page",
+          "notion_archive_data_source_item",
+          "notion_add_comment",
+          "notion_create_data_source_item",
+          "notion_restore_data_source_item",
+          "notion_add_content_to_page",
+          "notion_update_database",
+          "notion_update_data_source_item",
+          "notion_create_page",
+          "notion_retrieve_database",
+          "notion_upload_file_to_page_or_block",
+          "notion_retrieve_a_page",
+          "notion_upload_file_to_data_source_item",
+          "notion_update_data_source_schema",
+          "notion_get_page_or_data_source_item_by_id",
+          "notion_get_page_and_children",
+          "telegram_send_message",
+          "telegram_send_photo",
+          "telegram_send_poll"
+        ],
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        2400,
+        -2192
+      ],
+      "id": "db57ebe1-f9e7-4e70-8831-9b2db31fe41f",
+      "name": "mcp_todoist"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-2024-11-20",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-2024-11-20"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1184,
+        -2208
+      ],
+      "id": "e0f12f02-4955-4f71-b97a-4f4a363a7d0e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "NjSoUKJIRGFNa4bl",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook (Todoist)": [
+      {
+        "json": {
+          "headers": {
+            "host": "saladinoneo.app.n8n.cloud",
+            "user-agent": "Todoist-Webhooks",
+            "content-length": "1203",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2600:1f18:7853:ad07:8375:b8b3:4392:6a78",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "9a5d83cfe76f0604-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-app-id": "32647",
+            "x-forwarded-for": "2600:1f18:7853:ad07:8375:b8b3:4392:6a78, 172.71.194.117",
+            "x-forwarded-host": "saladinoneo.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-15-6cb64f5ddc-g6lcc",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2600:1f18:7853:ad07:8375:b8b3:4392:6a78",
+            "x-todoist-delivery-id": "c05d195b-e0e9-4653-ab31-ede09e0c230b",
+            "x-todoist-hmac-sha256": "bxQaS4BG8eBpRkvP6YGeGBoI9FuLd42bfFPTx2/hRrM="
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "event_data": {
+              "added_at": "2025-11-28T23:06:14.996401Z",
+              "added_by_uid": "53441172",
+              "assigned_by_uid": null,
+              "checked": false,
+              "child_order": 13,
+              "completed_at": null,
+              "completed_by_uid": null,
+              "content": "✅ Шаг 1 завершён: Инструменты Notion найдены (NOTION_CREATE_DATABASE, NOTION_QUERY_DATABASE). Подключение активно.",
+              "day_order": -1,
+              "deadline": null,
+              "description": "",
+              "due": null,
+              "duration": null,
+              "id": "6fPGmj9JCv3CmQ4F",
+              "is_collapsed": false,
+              "is_deleted": false,
+              "labels": [],
+              "note_count": 0,
+              "parent_id": null,
+              "priority": 1,
+              "project_id": "6Xh6JMhCpFWq2Hjm",
+              "responsible_uid": null,
+              "section_id": null,
+              "updated_at": "2025-11-28T23:06:14.996417Z",
+              "url": "https://app.todoist.com/app/task/6fPGmj9JCv3CmQ4F",
+              "user_id": "53441172"
+            },
+            "event_name": "item:added",
+            "initiator": {
+              "email": "withabakirov@gmail.com",
+              "full_name": "With Abakirov",
+              "id": "53441172",
+              "image_id": "c26a580d26d4440eae74beaaf8b37ade",
+              "is_premium": false
+            },
+            "triggered_at": "2025-11-28T23:06:15.183415Z",
+            "user_id": "53441172",
+            "version": "1"
+          },
+          "webhookUrl": "https://saladinoneo.app.n8n.cloud/webhook/todo",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Constants": {
+      "main": [
+        [
+          {
+            "node": "Telegram (Start)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram (Start)": {
+      "main": [
+        [
+          {
+            "node": "Set Status Msg ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status Msg ID": {
+      "main": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SALI BRAIN": {
+      "main": [
+        [
+          {
+            "node": "Format Cleaner1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Final Answer1": {
+      "main": [
+        [
+          {
+            "node": "Clean Status Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cleaner1": {
+      "main": [
+        [
+          {
+            "node": "Send Final Answer1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (Todoist)": {
+      "main": [
+        [
+          {
+            "node": "Constants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zep Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_status": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mcp_rube": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawl in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many items in Hacker News": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "mcp_todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "SALI BRAIN",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "tvGHaymdiEDWa3gE"
+  },
+  "versionId": "2503a34f-ffd6-4534-8f6c-5c41f0103a08",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e3393c9a378da9afc7699ba17dae9ff9cfc0eb353aab6888d0160b3ceeb477f3"
+  },
+  "id": "IG8Wgtr9cab2eGDp",
+  "tags": []
+}
